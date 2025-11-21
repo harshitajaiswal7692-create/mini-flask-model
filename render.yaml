@@ -27,4 +27,4 @@ services:
     name: flask-mini-model
     env: python
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn app:app"
+    startCommand: "gunicorn app:add"
