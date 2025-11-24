@@ -5,7 +5,9 @@ app = Flask(__name__)
 @app.route('/')
 def home():
     return "Welcome to the Mini Flask Model!"
-
+@app.route("/flask", methods=["GET"])
+def home():
+    return "Flask server running! Use POST /chat"
 @app.route('/add', methods=['POST'])
 def add_numbers():
     data = request.get_json()
