@@ -3,12 +3,17 @@ from flask import Flask, request, jsonify
 from groq import Groq
 from dotenv import load_dotenv
 
+# Load environment variables from .env
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
+# Initialize Groq client
 client = Groq(api_key=GROQ_API_KEY)
 
+# Initialize Flask app
 text = Flask(__name__)
 
+# Chat generation function
 def generate_chat(message):
     res = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
@@ -16,6 +21,7 @@ def generate_chat(message):
     )
     return res.choices[0].message.content
 
+# Flask POST endpoint
 @text.route("/chat", methods=["POST"])
 def chat():
     data = request.get_json()
@@ -30,6 +36,9 @@ def chat():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# Run Flask server
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 5000))  # Use Render's port
     text.run(host="0.0.0.0", port=port, debug=False)
+
+
