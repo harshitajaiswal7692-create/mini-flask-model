@@ -11,7 +11,7 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 client = Groq(api_key=GROQ_API_KEY)
 
 # Initialize Flask app
-app = Flask(__name__)
+text = Flask(__name__)
 
 # Chat generation function
 def generate_chat(message):
@@ -22,7 +22,7 @@ def generate_chat(message):
     return res.choices[0].message.content
 
 # Flask POST endpoint
-@app.route("/chat", methods=["POST"])
+@text.route("/chat", methods=["POST"])
 def chat():
     data = request.get_json()
     user_input = data.get("message", "")
@@ -38,4 +38,4 @@ def chat():
 
 # Run Flask server
 if __name__ == "__main__":
-    app.run(debug=True)
+    text.run(debug=True)
