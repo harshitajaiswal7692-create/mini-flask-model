@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from groq import Groq
 from dotenv import load_dotenv
 import os
+import re
 
 load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
@@ -20,9 +21,23 @@ def chat():
     try:
         res = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": msg}]
+            messages=[
+                {"role": "system", "content": "Reply in plain text only. No markdown, no bullet points, no numbering."},
+                {"role": "user", "content": msg}
+            ]
         )
-        return jsonify({"response": res.choices[0].message.content})
+
+        text = res.choices[0].message.content
+
+        # ---------- CLEANING ----------
+        text = re.sub(r'\*\*', '', text)      # remove bold markers
+        text = re.sub(r'\n+', ' ', text)      # remove newline
+        text = re.sub(r'\d+\.\s*', '', text)  # remove numbered list
+        text = re.sub(r'[-•]\s*', '', text)   # remove bullets
+        text = text.strip()
+        # --------------------------------
+
+        return jsonify({"response": text})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
