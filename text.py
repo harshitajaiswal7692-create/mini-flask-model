@@ -18,24 +18,43 @@ def chat():
     if not msg:
         return jsonify({"error": "Message field is required"}), 400
 
-    try:
-        res = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[
-                {"role": "system", "content": "Reply in plain text only. No markdown, no bullet points, no numbering."},
-                {"role": "user", "content": msg}
-            ]
-        )
+      try:
 
-        text = res.choices[0].message.content
+        max_attempts = 3
+        text = ""
 
-        # ---------- CLEANING ----------
-        text = re.sub(r'\*\*', '', text)      # remove bold markers
-        text = re.sub(r'\n+', ' ', text)      # remove newline
-        text = re.sub(r'\d+\.\s*', '', text)  # remove numbered list
-        text = re.sub(r'[-•]\s*', '', text)   # remove bullets
-        text = text.strip()
-        # --------------------------------
+        for i in range(max_attempts):
+
+            res = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "Reply in plain text only. No markdown. Summarize into EXACTLY 60 words. Count words carefully."
+                    },
+                    {"role": "user", "content": msg}
+                ]
+            )
+
+            text = res.choices[0].message.content
+
+            # CLEANING
+            text = re.sub(r'\*\*', '', text)
+            text = re.sub(r'\n+', ' ', text)
+            text = re.sub(r'\d+\.\s*', '', text)
+            text = re.sub(r'[-•]\s*', '', text)
+            text = text.strip()
+
+            words = text.split()
+
+            # If correct word count -> stop loop
+          
+
+            # If too long -> trim
+           if len(words) >= 60:
+                text = " ".join(words[:60])
+            else:
+                text = " ".join(words)  # keep if less (or retry API)
 
         return jsonify({"response": text})
 
