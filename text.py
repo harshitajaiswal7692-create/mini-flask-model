@@ -18,8 +18,7 @@ def chat():
     if not msg:
         return jsonify({"error": "Message field is required"}), 400
 
-      try:
-
+    try:
         max_attempts = 3
         text = ""
 
@@ -47,14 +46,12 @@ def chat():
 
             words = text.split()
 
-            # If correct word count -> stop loop
-          
-
             # If too long -> trim
-           if len(words) >= 60:
+            if len(words) >= 60:
                 text = " ".join(words[:60])
+                break
             else:
-                text = " ".join(words)  # keep if less (or retry API)
+                text = " ".join(words)
 
         return jsonify({"response": text})
 
