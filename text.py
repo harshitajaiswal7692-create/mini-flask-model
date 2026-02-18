@@ -1,57 +1,53 @@
 from flask import Blueprint, request, jsonify
 from groq import Groq
 from dotenv import load_dotenv
+from bs4 import BeautifulSoup
 import os
 import re
 
 load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-# Create a blueprint
 chat_bp = Blueprint("chat_bp", __name__)
 
 @chat_bp.route("/chat", methods=["POST"])
 def chat():
-    data = request.get_json()
-    msg = data.get("message", "")
 
-    if not msg:
-        return jsonify({"error": "Message field is required"}), 400
+    data = request.get_json()
+
+    html_content = data.get("content", "")
+
+    if not html_content:
+        return jsonify({"error": "Content field is required"}), 400
 
     try:
-        max_attempts = 3
-        text = ""
 
-        for i in range(max_attempts):
+        soup = BeautifulSoup(html_content, "html.parser")
 
-            res = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "Reply in plain text only. No markdown. Summarize into EXACTLY 60 words. Count words carefully."
-                    },
-                    {"role": "user", "content": msg}
-                ]
-            )
+        for tag in soup(["script", "style"]):
+            tag.decompose()
 
-            text = res.choices[0].message.content
+        plain_text = soup.get_text(separator=" ").strip()
 
-            # CLEANING
-            text = re.sub(r'\*\*', '', text)
-            text = re.sub(r'\n+', ' ', text)
-            text = re.sub(r'\d+\.\s*', '', text)
-            text = re.sub(r'[-•]\s*', '', text)
-            text = text.strip()
+        res = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role": "system",
+                    "content": """
+                    Reply in plain text only.
+                    Summarize the content in up to 60 words.
+                    Do not exceed 60 words.
+                    """
+                },
+                {"role": "user", "content": plain_text}
+            ]
+        )
 
-            words = text.split()
+        text = res.choices[0].message.content
 
-            # If too long -> trim
-            if len(words) >= 60:
-                text = " ".join(words[:60])
-                break
-            else:
-                text = " ".join(words)
+        # CLEANING (optional)
+        text = re.sub(r'\n+', ' ', text).strip()
 
         return jsonify({"response": text})
 
